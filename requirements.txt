@@ -1,0 +1,13 @@
+# MQTT to IoT Hub Bridge Dependencies
+
+# MQTT Client
+paho-mqtt==1.6.1
+
+# Azure IoT Hub SDK
+azure-iot-device==2.13.0
+
+# Configuration Management
+PyYAML==6.0.1
+
+# Utilities
+python-dotenv==1.0.0

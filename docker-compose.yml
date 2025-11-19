@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  mqtt-iot-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mqtt-iot-bridge
+    restart: unless-stopped
+    environment:
+      # MQTT Configuration
+      - MQTT_BROKER_HOST=${MQTT_BROKER_HOST:-localhost}
+      - MQTT_BROKER_PORT=${MQTT_BROKER_PORT:-1883}
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - MQTT_CLIENT_ID=${MQTT_CLIENT_ID:-mqtt_iot_bridge}
+      - MQTT_TOPICS=${MQTT_TOPICS:-sensors/#,devices/#}
+      - MQTT_QOS=${MQTT_QOS:-1}
+      - MQTT_USE_TLS=${MQTT_USE_TLS:-false}
+
+      # Azure IoT Hub Configuration
+      - IOTHUB_CONNECTION_STRING=${IOTHUB_CONNECTION_STRING}
+      - IOTHUB_DEVICE_ID=${IOTHUB_DEVICE_ID}
+      - IOTHUB_MODULE_ID=${IOTHUB_MODULE_ID:-}
+
+      # Bridge Configuration
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - RETRY_ENABLED=${RETRY_ENABLED:-true}
+
+    # Mount configuration file (optional - use env vars or config file)
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./logs:/app/logs
+
+    # Network mode - use host network to access local MQTT broker
+    # Change to bridge mode if MQTT broker is in another container
+    network_mode: host
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: Local MQTT Broker (Mosquitto) for testing
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: mqtt-broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    profiles:
+      - testing
+
+networks:
+  default:
+    name: mqtt-iot-network
